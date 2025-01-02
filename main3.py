@@ -1,9 +1,5 @@
 import requests
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-
-app = Flask(__name__)
-CORS(app, origins="https://greytechno.github.io")
+import streamlit as st
 
 # Function to check if the IP is private using ip-api
 def check_ip_with_ipapi(ip):
@@ -19,30 +15,32 @@ def check_ip_with_ipapi(ip):
     except requests.RequestException as e:
         return False  # If there's an error with the API request, assume the IP is public
 
-@app.route("/check", methods=["GET"])
-def check_origin():
-    client_ip = request.remote_addr
-    user_agent = request.headers.get('User-Agent')
-    referer = request.headers.get('Referer')
-    accept_language = request.headers.get('Accept-Language')
+# Streamlit App
+st.title("Check Origin")
 
+# Inputs for testing
+client_ip = st.text_input("Client IP", placeholder="Enter client IP address")
+referer = st.text_input("Referer", placeholder="Enter the referer URL")
+user_agent = st.text_input("User-Agent", placeholder="Enter the user-agent")
+accept_language = st.text_input("Accept-Language", placeholder="Enter the accepted language")
+
+# Action button to perform checks
+if st.button("Check Origin"):
     # Check if the Referer is correct
     if referer != "https://greytechno.github.io/":
-        return jsonify({"status": "fail"}), 400
-    
-    # Check if the IP is private using the ip-api service
-    if not check_ip_with_ipapi(client_ip):
-        return jsonify({"status": "fail"})
-    
-    # All checks passed
-    return jsonify({
-        "status": "success",
-        "message": "Caller site is correct.",
-        "client_ip": client_ip,
-        "user_agent": user_agent,
-        "referer": referer,
-        "accept_language": accept_language
-    })
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+        st.error("Referer is incorrect.")
+    else:
+        # Check if the IP is private using the ip-api service
+        if not check_ip_with_ipapi(client_ip):
+            st.error("The IP is not private.")
+        else:
+            # All checks passed
+            st.success("Caller site is correct.")
+            st.json({
+                "status": "success",
+                "message": "Caller site is correct.",
+                "client_ip": client_ip,
+                "user_agent": user_agent,
+                "referer": referer,
+                "accept_language": accept_language
+            })
